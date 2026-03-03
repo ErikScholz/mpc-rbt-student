@@ -13,6 +13,7 @@ void Sender::Node::run()
 void Sender::Node::onDataTimerTick()
 {
   // Update data
+  data.frame = "baller_frame";
   data.x += 4.2;
   data.y += 6.7;
   data.z += 6.9;
