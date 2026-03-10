@@ -19,6 +19,9 @@ class EpicNode : public rclcpp::Node
 
         // Create node_name publisher
         name_publisher_ = this->create_publisher<std_msgs::msg::String>("node_name", 10);
+        
+        // Creates timer that publishes node_name every X ms
+        timer_ = this->create_wall_timer(500ms, std::bind(&EpicNode::timer_callback, this));
 
         // Battery percentage publisher
         battery_percent_publisher_ = this->create_publisher<std_msgs::msg::Float32>("battery_percentage", 10);
@@ -26,9 +29,16 @@ class EpicNode : public rclcpp::Node
         // Battery voltage subscriber
         battery_voltage_subscriber_ = this->create_subscription<std_msgs::msg::Float32>("battery_voltage", 10,
             std::bind(&EpicNode::battery_callback, this, std::placeholders::_1));
-
-        // Creates timer that publishes node_name every X ms
-        timer_ = this->create_wall_timer(500ms, std::bind(&EpicNode::timer_callback, this));
+        
+        // Min voltage parameter
+        auto batt_volt_min_param_desc = rcl_interfaces::msg::ParameterDescriptor{};
+        batt_volt_min_param_desc.description = "This parameter changes the minimum battery voltage!";
+        this->declare_parameter("battery_min_voltage_v", 32.0, batt_volt_min_param_desc);
+        
+        // Max voltage parameter
+        auto batt_volt_max_param_desc = rcl_interfaces::msg::ParameterDescriptor{};
+        batt_volt_max_param_desc.description = "This parameter changes the maximus battery voltage!";
+        this->declare_parameter("battery_max_voltage_v", 42.0, batt_volt_max_param_desc);
     }
 
   private:
@@ -49,14 +59,18 @@ class EpicNode : public rclcpp::Node
         // Get data
         float voltage = msg->data;
 
+        // Get parameter data
+        float min_voltage = static_cast<float>(this->get_parameter("battery_min_voltage_v").as_double());
+        float max_voltage = static_cast<float>(this->get_parameter("battery_max_voltage_v").as_double());
+
         // Convert to percentage
-        float percentage = ((voltage - 32.0f) / (42.0f - 32.0f)) * 100.0f;
+        float percentage = ((voltage - min_voltage) / (max_voltage - min_voltage)) * 100.0f;
 
         // Publish and log
         auto message = std_msgs::msg::Float32();
         message.data = percentage;
         battery_percent_publisher_->publish(message);
-        RCLCPP_INFO(this->get_logger(), "Voltage: '%.2f'V -> Percent: '%.2f' %%", voltage, percentage);
+        RCLCPP_INFO(this->get_logger(), "Voltage: %.2f V (%.2f %%)", voltage, percentage);
     }
     
 
