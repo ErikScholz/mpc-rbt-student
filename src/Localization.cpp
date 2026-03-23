@@ -70,7 +70,7 @@ void LocalizationNode::jointCallback(const sensor_msgs::msg::JointState & msg) {
 
 
     // Update odometry
-    updateOdometry(msg.velocity[0], msg.velocity[1], dt);
+    updateOdometry(msg.velocity[1], msg.velocity[0], dt);
 
 
     // Publish

@@ -10,6 +10,11 @@ Panels:
         - /TF1
         - /Map1
         - /Map1/Topic1
+        - /LaserScan1
+        - /Odometry1
+        - /Odometry1/Shape1
+        - /Odometry2
+        - /Odometry2/Shape1
       Splitter Ratio: 0.520588219165802
     Tree Height: 756
   - Class: rviz_common/Selection
@@ -235,6 +240,8 @@ Visualization Manager:
           Value: true
         inertial unit:
           Value: true
+        map:
+          Value: true
         wheel_left_link:
           Value: true
         wheel_right_link:
@@ -245,29 +252,30 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        base_link:
-          Hokuyo_URG_04LX_UG01:
-            {}
-          accelerometer:
-            {}
-          base_cover_link:
-            {}
-          base_footprint:
-            {}
-          base_sonar_01_link:
-            {}
-          base_sonar_02_link:
-            {}
-          base_sonar_03_link:
-            {}
-          gyro:
-            {}
-          inertial unit:
-            {}
-          wheel_left_link:
-            {}
-          wheel_right_link:
-            {}
+        map:
+          base_link:
+            Hokuyo_URG_04LX_UG01:
+              {}
+            accelerometer:
+              {}
+            base_cover_link:
+              {}
+            base_footprint:
+              {}
+            base_sonar_01_link:
+              {}
+            base_sonar_02_link:
+              {}
+            base_sonar_03_link:
+              {}
+            gyro:
+              {}
+            inertial unit:
+              {}
+            wheel_left_link:
+              {}
+            wheel_right_link:
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 0.699999988079071
@@ -300,8 +308,8 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz_default_plugins/LaserScan
-      Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color: 255; 0; 0
+      Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -314,7 +322,7 @@ Visualization Manager:
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.05000000074505806
-      Style: Flat Squares
+      Style: Points
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -323,12 +331,90 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /tiago_base/Hokuyo_URG_04LX_UG01
       Use Fixed Frame: true
-      Use rainbow: true
+      Use rainbow: false
+      Value: true
+    - Angle Tolerance: 0.10000000149011612
+      Class: rviz_default_plugins/Odometry
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: true
+      Keep: 1
+      Name: Odometry
+      Position Tolerance: 0.10000000149011612
+      Shape:
+        Alpha: 1
+        Axes Length: 1
+        Axes Radius: 0.10000000149011612
+        Color: 36; 195; 0
+        Head Length: 0.30000001192092896
+        Head Radius: 0.10000000149011612
+        Shaft Length: 1
+        Shaft Radius: 0.05000000074505806
+        Value: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /odometry
+      Value: true
+    - Angle Tolerance: 0.10000000149011612
+      Class: rviz_default_plugins/Odometry
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: true
+      Keep: 100
+      Name: Odometry
+      Position Tolerance: 0.10000000149011612
+      Shape:
+        Alpha: 0.75
+        Axes Length: 1
+        Axes Radius: 0.10000000149011612
+        Color: 36; 195; 0
+        Head Length: 0.05000000074505806
+        Head Radius: 0.009999999776482582
+        Shaft Length: 0.20000000298023224
+        Shaft Radius: 0.004999999888241291
+        Value: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /odometry
       Value: true
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
-    Fixed Frame: base_link
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
@@ -371,7 +457,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 15.123160362243652
+      Distance: 13.116739273071289
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -389,7 +475,7 @@ Visualization Manager:
       Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.713576793670654
+      Yaw: 4.713573932647705
     Saved: ~
 Window Geometry:
   Displays:
@@ -407,5 +493,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1908
-  X: 0
-  Y: 0
+  X: -32
+  Y: -32
