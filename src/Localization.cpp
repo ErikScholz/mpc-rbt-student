@@ -11,14 +11,14 @@ LocalizationNode::LocalizationNode() :
     odometry_.header.frame_id = "map";
     odometry_.child_frame_id = "base_link";
 
-    odometry_.pose.pose.position.x = 0.0;
+    odometry_.pose.pose.position.x = -0.5;
     odometry_.pose.pose.position.y = 0.0;
-    odometry_.pose.pose.position.z = 0.0;
-    
-    odometry_.pose.pose.orientation.x = 0.0;
-    odometry_.pose.pose.orientation.y = 0.0;
-    odometry_.pose.pose.orientation.z = 0.0;
-    odometry_.pose.pose.orientation.w = 1.0;
+    odometry_.pose.pose.position.z = 0.0956;
+
+    tf2::Quaternion q;
+    q.setRPY(0, 0, 0.00187365);
+    odometry_.pose.pose.orientation = tf2::toMsg(q);
+
 
 
     // Subscriber for joint_states
@@ -81,9 +81,13 @@ void LocalizationNode::jointCallback(const sensor_msgs::msg::JointState & msg) {
 
 
 void LocalizationNode::updateOdometry(double left_wheel_vel, double right_wheel_vel, double dt) {
-    // Calculate speed
-    double linear = (right_wheel_vel + left_wheel_vel) / 2.0;
-    double angular = (right_wheel_vel - left_wheel_vel) / (2.0 * robot_config::HALF_DISTANCE_BETWEEN_WHEELS);
+    // Convert from rad/s to m/s and calculate speed
+    double v_left = left_wheel_vel * robot_config::WHEEL_RADIUS;
+    double v_right = right_wheel_vel * robot_config::WHEEL_RADIUS;
+    double L = 2.0 * robot_config::HALF_DISTANCE_BETWEEN_WHEELS;
+
+    double linear = (v_right + v_left) / 2.0;
+    double angular = (v_right - v_left) / L;
 
 
     // Get current orientation
@@ -92,35 +96,21 @@ void LocalizationNode::updateOdometry(double left_wheel_vel, double right_wheel_
     double roll, pitch, theta;
     tf2::Matrix3x3(tf_quat).getRPY(roll, pitch, theta);
 
-
+    
     // Euler integration
     odometry_.pose.pose.position.x += linear * cos(theta) * dt;
     odometry_.pose.pose.position.y += linear * sin(theta) * dt;
     theta += angular * dt;
 
 
+    // Normalize angle
+    theta = std::atan2(std::sin(theta), std::cos(theta));
+
+
     // Convert back to quaternion (bleeeh)
     tf2::Quaternion q;
     q.setRPY(0, 0, theta);
     odometry_.pose.pose.orientation = tf2::toMsg(q);
-
-    // ********
-    // * Help *
-    // ********
-    /*
-    double linear =  ;
-    double angular = ;  //robot_config::HALF_DISTANCE_BETWEEN_WHEELS
-
-    tf2::Quaternion tf_quat;
-    tf2::fromMsg(odometry_.pose.pose.orientation, tf_quat);
-    double roll, pitch, theta;
-    tf2::Matrix3x3(tf_quat).getRPY(roll, pitch, theta);
-
-    theta = std::atan2(std::sin(theta), std::cos(theta));
-
-    tf2::Quaternion q;
-    q.setRPY(0, 0, 0);
-    */
 }
 
 
