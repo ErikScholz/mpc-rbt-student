@@ -74,7 +74,7 @@ void PlanningNode::planPath(const std::shared_ptr<nav_msgs::srv::GetPlan::Reques
 
 
     // Smooth calculated path
-    smoothPath();
+    if (!path_.poses.empty()) smoothPath();
 
     // Save plan to response
     response->plan = path_;
@@ -163,7 +163,6 @@ void PlanningNode::aStar(const geometry_msgs::msg::PoseStamped &start, const geo
         map_y = std::round((world_y - map_origin.position.y) / map_resolution);
 
         // Check that they are inside map
-        //return (map_x >= 0 && map_x < (int)map_.info.width && map_y >= 0 && map_y < (int)map_.info.height);
         return is_inside_map(map_x, map_y);
     };
 
@@ -345,16 +344,62 @@ void PlanningNode::aStar(const geometry_msgs::msg::PoseStamped &start, const geo
 
 
 void PlanningNode::smoothPath() {
-    // add code here
+    // Nothing to smooth
+    if (path_.poses.size() < 3) return;
 
-    // ********
-    // * Help *
-    // ********
-    /*
-    std::vector<geometry_msgs::msg::PoseStamped> newPath = path_.poses;
-    ... processing ...
-    path_.poses = newPath;
-    */
+    // Parameters
+    float weight_data = 0.5f;
+    float weight_smooth = 0.3f;
+    float tolerance = 0.001f;
+    int max_iterations = 500;
+
+    // Create copy of path points
+    std::vector<geometry_msgs::msg::PoseStamped> smoothed_path = path_.poses;
+
+    float change = tolerance;
+    int iterations = 0;
+
+
+    // Smoothing loop
+    while (change >= tolerance && iterations < max_iterations) {
+        change = 0.0f;
+        iterations++;
+
+        // Go from second first to second to last points
+        for (size_t i = 1; i < smoothed_path.size() - 1; i++) {
+            // Store old values
+            double old_x = smoothed_path[i].pose.position.x;
+            double old_y = smoothed_path[i].pose.position.y;
+
+
+            // Helper vars for clarity
+            double sp_curr_x = smoothed_path[i].pose.position.x;
+            double sp_prev_x = smoothed_path[i - 1].pose.position.x;
+            double sp_next_x = smoothed_path[i + 1].pose.position.x;
+
+            double sp_curr_y = smoothed_path[i].pose.position.y;
+            double sp_prev_y = smoothed_path[i - 1].pose.position.y;
+            double sp_next_y = smoothed_path[i + 1].pose.position.y;
+
+
+            // Calculate stuff
+            double update_x = weight_data * (path_.poses[i].pose.position.x - sp_curr_x) + weight_smooth * (sp_prev_x + sp_next_x - 2.0 * sp_curr_x);
+            double update_y = weight_data * (path_.poses[i].pose.position.y - sp_curr_y) + weight_smooth * (sp_prev_y + sp_next_y - 2.0 * sp_curr_y);
+            
+            // Reflect update
+            smoothed_path[i].pose.position.x += update_x;
+            smoothed_path[i].pose.position.y += update_y;
+            
+
+            // Add absolute change to total change for this iteration
+            change += std::abs(old_x - smoothed_path[i].pose.position.x);
+            change += std::abs(old_y - smoothed_path[i].pose.position.y);
+        }
+    }
+
+    // Update path
+    path_.poses = smoothed_path;
+    RCLCPP_INFO(get_logger(), "Path smoothed in %d iterations.", iterations);
 }
 
 
