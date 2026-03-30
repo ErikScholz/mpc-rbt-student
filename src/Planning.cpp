@@ -109,6 +109,8 @@ void PlanningNode::aStar(const geometry_msgs::msg::PoseStamped &start, const geo
     int map_height = map_.info.height;
 
 
+
+
     // Helper functions
     auto get_index = [map_width](int x, int y) {
         return y * map_width + x;
@@ -116,7 +118,7 @@ void PlanningNode::aStar(const geometry_msgs::msg::PoseStamped &start, const geo
 
 
     auto is_inside_map = [map_width, map_height](int x, int y) {
-        return (x > 0 || x < (int)map_width) && (y > 0 && y < (int)map_height);
+        return (x >= 0 && x < (int)map_width) && (y >= 0 && y < (int)map_height);
     };
 
 
@@ -136,6 +138,43 @@ void PlanningNode::aStar(const geometry_msgs::msg::PoseStamped &start, const geo
     };
 
 
+    auto map_to_world_coords = [map_origin, map_resolution](int map_x, int map_y, double &world_x, double &world_y) {
+        world_x = map_x * map_resolution + map_origin.position.x;
+        world_y = map_y * map_resolution + map_origin.position.y;
+    };
+
+
+    auto reconstruct_path = [&](std::shared_ptr<Cell> current) {
+        // Init header
+        path_.poses.clear();
+        path_.header.frame_id = map_.header.frame_id;
+        path_.header.stamp = this->now();
+
+        while (current)
+        {
+            // Init pose
+            geometry_msgs::msg::PoseStamped pose;
+            pose.header = path_.header;
+
+            // Convert map coord to world coords
+            double world_x, world_y;
+            map_to_world_coords(current->x, current->y, world_x, world_y);
+
+            // Update data
+            pose.pose.position.x = world_x;
+            pose.pose.position.y = world_y;
+            pose.pose.position.z = 0.0;
+            pose.pose.orientation.w = 1.0;
+            
+            // Add point to path
+            path_.poses.push_back(pose);
+            current = current->parent;
+        }
+
+        // Reverse order
+        std::reverse(path_.poses.begin(), path_.poses.end());
+        RCLCPP_INFO(this->get_logger(), "Path reconstructed with %zu points", path_.poses.size());
+    };
 
 
 
@@ -169,9 +208,31 @@ void PlanningNode::aStar(const geometry_msgs::msg::PoseStamped &start, const geo
     open_list.push_back(std::make_shared<Cell>(start_cell));
 
 
+    // G-score map
+    std::vector<float> g_scores(map_.info.width * map_.info.height, std::numeric_limits<float>::max());
+
+    int start_idx = get_index(start_x, start_y);
+    g_scores[start_idx] = 0.0f;
+
+
+    // Max iterations
+    int max_iterations = map_width * map_height;
+    int iterations = 0;
+
+
     // A* loop
     while (!open_list.empty() && rclcpp::ok())
     {
+        // Increment iteration counter
+        iterations++;
+
+        // Prevent infinite loop
+        if (iterations > max_iterations) {
+            RCLCPP_ERROR(get_logger(), "A* reached maximum iterations (%d). Planning aborted.", max_iterations);
+            break; 
+        }
+
+
         // Find cell with lowest cost in open list
         auto it = std::min_element(open_list.begin(), open_list.end(),
             [](const std::shared_ptr<Cell>& a, const std::shared_ptr<Cell>& b) {
@@ -183,17 +244,17 @@ void PlanningNode::aStar(const geometry_msgs::msg::PoseStamped &start, const geo
         // Get current lowest
         std::shared_ptr<Cell> current = *it;
 
-
-        // Move it from open to closed list
+        // Remove it from open list
         open_list.erase(it);
 
+        // Add it to close list
         int curr_idx = get_index(current->x, current->y);
         closed_list[curr_idx] = true;
 
 
         // Check for reaching the goal
         if (current->x == goal_x && current->y == goal_y) {
-            //reconstruct_path(current);
+            reconstruct_path(current);
             return;
         }
 
@@ -227,41 +288,28 @@ void PlanningNode::aStar(const geometry_msgs::msg::PoseStamped &start, const geo
             float new_h = std::hypot(nb_x - goal_x, nb_y - goal_y);
 
 
-            // Update neighbor cell
-            auto neighbor = std::make_shared<Cell>(nb_x, nb_y);
-            neighbor->g = new_g;
-            neighbor->h = new_h;
-            neighbor->f = new_g + new_h;
-            neighbor->parent = current;
+            // We found better way to neighbor
+            if (new_g < g_scores[nb_idx]) {
 
-            // Add to open list
-            open_list.push_back(neighbor);
+                // Update G-score map
+                g_scores[nb_idx] = new_g;
+
+                // Update neighbor cell
+                auto neighbor = std::make_shared<Cell>(nb_x, nb_y);
+                neighbor->g = new_g;
+                neighbor->h = new_h;
+                neighbor->f = new_g + new_h;
+                neighbor->parent = current;
+
+                // Add to open list
+                open_list.push_back(neighbor);
+            }
         }
     }
     
 
     // No valid path found
     RCLCPP_ERROR(get_logger(), "Unable to plan path.");
-    
-
-    // ********
-    // * Help *
-    // ********
-    /*
-    Cell cStart(...x-map..., ...y-map...);
-    Cell cGoal(...x-map..., ...y-map...);
-
-    std::vector<std::shared_ptr<Cell>> openList;
-    std::vector<bool> closedList(map_.info.height * map_.info.width, false);
-
-    openList.push_back(std::make_shared<Cell>(cStart));
-
-    while(!openList.empty() && rclcpp::ok()) {
-        ...
-    }
-
-    RCLCPP_ERROR(get_logger(), "Unable to plan path.");
-    */
 }
 
 
