@@ -90,6 +90,11 @@ void LocalizationNode::updateOdometry(double left_wheel_vel, double right_wheel_
     double angular = (v_right - v_left) / L;
 
 
+    // Save speeds
+    odometry_.twist.twist.linear.x = linear;
+    odometry_.twist.twist.angular.z = angular;
+
+
     // Get current orientation
     tf2::Quaternion tf_quat;
     tf2::fromMsg(odometry_.pose.pose.orientation, tf_quat);
