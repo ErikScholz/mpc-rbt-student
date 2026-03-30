@@ -44,11 +44,12 @@ void PlanningNode::mapCallback(rclcpp::Client<nav_msgs::srv::GetMap>::SharedFutu
 
     // Valid response
     if (response) {
-        // Save map
+        // Save map and log
         map_ = response->map;
-
-        // Log
         RCLCPP_INFO(get_logger(), "Map received successfully! (%d x %d)", map_.info.width, map_.info.height);
+
+        // Dilate map
+        dilateMap();
     }
 
     // No/invalid response
@@ -86,16 +87,45 @@ void PlanningNode::planPath(const std::shared_ptr<nav_msgs::srv::GetPlan::Reques
 
 
 void PlanningNode::dilateMap() {
-    // add code here
+    // Create copy of the map
+    nav_msgs::msg::OccupancyGrid dilated_map = map_;
 
-    // ********
-    // * Help *
-    // ********
-    /*
-    nav_msgs::msg::OccupancyGrid dilatedMap = map_;
-    ... processing ...
-    map_ = dilatedMap;
-    */
+    // Get map size
+    int map_width = map_.info.width;
+    int map_height = map_.info.height;
+
+    // Settings
+    int dilation_size = 7;
+
+
+    // Go through the map
+    for (int x = 0; x < map_width; x++)
+    for (int y = 0; y < map_height; y++)
+    {
+        // Get index for current coord
+        int curr_idx = y * map_width + x;
+
+        // Not an obstacle
+        if (map_.data[curr_idx] <= 50) continue;
+
+        // Check neighbors
+        for (int dx = -dilation_size; dx <= dilation_size; dx++)
+        for (int dy = -dilation_size; dy <= dilation_size; dy++)
+        {
+            // Get neighbor coords
+            int nb_x = x + dx;
+            int nb_y = y + dy;
+
+            // Dilate if inside map
+            if ((nb_x >= 0 && nb_x < map_width) && (nb_y >= 0 && nb_y < map_height))
+                dilated_map.data[nb_y * map_width + nb_x] = 100;
+        }
+    }
+
+
+    // Update original map
+    map_ = dilated_map;
+    RCLCPP_INFO(get_logger(), "Map dilation finished.");
 }
 
 
