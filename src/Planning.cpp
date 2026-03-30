@@ -1,25 +1,38 @@
-#include "mpc_rbt_solution/Planning.hpp"
+#include "Planning.hpp"
 
 PlanningNode::PlanningNode() :
     rclcpp::Node("planning_node") {
 
         // Client for map
-        // add code here
+        map_client_ = this->create_client<nav_msgs::srv::GetMap>("/map_server/get_map");
+
 
         // Service for path
-        // add code here
+        plan_service_ = this->create_service<nav_msgs::srv::GetPlan>("plan_path",
+            std::bind(&PlanningNode::planPath, this, std::placeholders::_1, std::placeholders::_2)
+        );
         
+
         // Publisher for path
-        // add code here
+        path_pub_ = this->create_publisher<nav_msgs::msg::Path>("/planned_path", 10);
+
 
         RCLCPP_INFO(get_logger(), "Planning node started.");
 
+
         // Connect to map server
-        // add code here
+        while (rclcpp::ok() && !map_client_->wait_for_service(std::chrono::seconds(1))) {
+            RCLCPP_INFO(get_logger(), "Waiting for map_server service...");
+        }
+
+        if (!rclcpp::ok()) return;
+
 
         // Request map
-        // add code here
+        auto request = std::make_shared<nav_msgs::srv::GetMap::Request>();
+        map_client_->async_send_request(request, std::bind(&PlanningNode::mapCallback, this, std::placeholders::_1));
         
+
         RCLCPP_INFO(get_logger(), "Trying to fetch map...");
     }
 

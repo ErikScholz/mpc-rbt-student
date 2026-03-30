@@ -18,11 +18,20 @@ def generate_launch_description():
         launch_arguments={'use_sim_time': 'true'}.items()
     )
 
-    #Localization
+    # Localization
     localization_node = Node(
         package='mpc_rbt_student',
         executable='localization_node',
         name='localization_node',
+        output='screen',
+        parameters=[{'use_sim_time': True}]
+    )
+
+    # Planning
+    planning_node = Node(
+        package='mpc_rbt_student',
+        executable='planning_node',
+        name='planning_node',
         output='screen',
         parameters=[{'use_sim_time': True}]
     )
@@ -48,6 +57,9 @@ def generate_launch_description():
 
         TimerAction(
             period = 10.0,
-            actions = [localization_node]
+            actions = [
+                localization_node,
+                planning_node
+            ]
         )
     ])
