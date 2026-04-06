@@ -36,6 +36,15 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}]
     )
 
+    # Motion
+    motion_control_node = Node(
+        package='mpc_rbt_student',
+        executable='motion_control_node',
+        name='motion_control_node',
+        output='screen',
+        parameters=[{'use_sim_time': True}]
+    )
+
     # RViz2 and config
     rviz_node = Node(
         package='rviz2',
@@ -59,7 +68,8 @@ def generate_launch_description():
             period = 10.0,
             actions = [
                 localization_node,
-                planning_node
+                planning_node,
+                motion_control_node
             ]
         )
     ])
