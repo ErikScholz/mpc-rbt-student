@@ -22,7 +22,7 @@ class MotionControlNode : public rclcpp::Node {
     
     private:
         // Parameters
-        // TO DO
+        bool collision_detected;
 
         // Methods
         void checkCollision();

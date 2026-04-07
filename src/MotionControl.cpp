@@ -3,6 +3,8 @@
 
 MotionControlNode::MotionControlNode() :
     rclcpp::Node("motion_control_node") {
+        // Collision status
+        collision_detected = false;
 
         // Subscribers for odometry and laser scans
         odometry_sub_ = this->create_subscription<nav_msgs::msg::Odometry>("/odometry", 10,
@@ -44,7 +46,7 @@ void MotionControlNode::checkCollision() {
 
 
     // Parameters
-    const float stop_dist = 0.4f;
+    const float stop_dist = 0.35f;
     const int check_angle_deg = 40;
 
 
@@ -55,7 +57,7 @@ void MotionControlNode::checkCollision() {
 
 
     // Check for collisions
-    bool danger = false;
+    collision_detected = false;
     for (int i = center - window; i < center + window; ++i) {
 
         // Out of bounds check
@@ -66,14 +68,14 @@ void MotionControlNode::checkCollision() {
 
         // Obstacle in range
         if (std::isfinite(r) && r > 0.05f && r < stop_dist) {
-            danger = true;
+            collision_detected = true;
             break;
         }
     }
 
 
     // No obstacles detected
-    if (!danger) return;
+    if (!collision_detected) return;
 
 
     // OBSTACLE ABORT ABORT
@@ -117,12 +119,12 @@ void MotionControlNode::updateTwist() {
     }
 
 
+
     // Settings
     const size_t n_look_ahead = 5;
 
-    const double lin_speed = 0.1;
+    const double lin_speed = 0.15;
     const double P_gain = 2.0; 
-
 
 
 
@@ -324,7 +326,7 @@ void MotionControlNode::odomCallback(const nav_msgs::msg::Odometry & msg) {
         checkCollision();
 
         // Only update if no collisions detected
-        if (goal_handle_->is_active()) updateTwist();
+        if (!collision_detected) updateTwist();
     }
 }
 
