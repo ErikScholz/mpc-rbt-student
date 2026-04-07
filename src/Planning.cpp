@@ -95,7 +95,7 @@ void PlanningNode::dilateMap() {
     int map_height = map_.info.height;
 
     // Settings
-    int dilation_size = 7;
+    int dilation_size = 8;
 
 
     // Go through the map

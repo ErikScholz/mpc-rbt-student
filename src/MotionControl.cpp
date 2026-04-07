@@ -95,6 +95,7 @@ void MotionControlNode::checkCollision() {
 
 
 
+
 void MotionControlNode::updateTwist() {
     // No path
     if (path_.poses.empty()) return;
@@ -121,20 +122,15 @@ void MotionControlNode::updateTwist() {
 
 
     // Settings
-    const size_t n_look_ahead = 5;
+    const size_t n_look_ahead = 3;
+    const double max_lin_speed = 0.15;
+    const double P_gain = 2.5;
+    const double angle_threshold = 0.5;
 
-    const double lin_speed = 0.15;
-    const double P_gain = 2.0; 
 
 
-
-    // Get look-ahead waypoint index
-    size_t target_idx = closest_idx + n_look_ahead;
-    if (target_idx >= path_.poses.size()) {
-        target_idx = path_.poses.size() - 1;
-    }
-
-    // Get waypoint
+    // Select target waypoint
+    size_t target_idx = std::min(closest_idx + n_look_ahead, path_.poses.size() - 1);
     auto target_pose = path_.poses[target_idx].pose;
 
 
@@ -155,14 +151,28 @@ void MotionControlNode::updateTwist() {
     tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
 
 
+
     // Transform to local coords
+    double local_x = dx * std::cos(yaw) + dy * std::sin(yaw);
     double local_y = -dx * std::sin(yaw) + dy * std::cos(yaw);
 
 
-    // Update twist
+    // Calculate angle error
+    double angle_error = std::atan2(local_y, local_x);
+
+
+    // Calculate adaptive speed
     geometry_msgs::msg::Twist twist;
-    twist.linear.x = lin_speed; 
-    twist.angular.z = P_gain * local_y;
+
+    // Angular
+    twist.angular.z = P_gain * angle_error;
+
+    // Linear
+    if (std::abs(angle_error) > angle_threshold) twist.linear.x = 0.0;
+    else {
+        twist.linear.x = max_lin_speed * (1.0 - (std::abs(angle_error) / angle_threshold));
+        if (twist.linear.x < 0.02) twist.linear.x = 0.0; 
+    }
 
 
     // Cap speed
@@ -170,7 +180,7 @@ void MotionControlNode::updateTwist() {
     if (twist.angular.z < -1.0) twist.angular.z = -1.0;
 
 
-    // Send new twist
+    // Send new twist data
     twist_publisher_->publish(twist);
 }
 
