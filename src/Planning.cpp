@@ -224,6 +224,16 @@ void PlanningNode::aStar(const geometry_msgs::msg::PoseStamped &start, const geo
         return;
     }
 
+    if (is_obstacle(start_x, start_y)) {
+        RCLCPP_ERROR(get_logger(), "A* failed: Start is an obstacle!");
+        return;
+    }
+
+    else if (is_obstacle(goal_x, goal_y)) {
+        RCLCPP_ERROR(get_logger(), "A* failed: Goal is an obstacle!");
+        return;
+    }
+
 
     // Init cells
     Cell start_cell(start_x, start_y);
