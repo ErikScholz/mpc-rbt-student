@@ -1,9 +1,7 @@
 #include "behaviortree_ros2/tree_execution_server.hpp"
 #include "behaviortree_cpp/loggers/bt_cout_logger.h"
 
-// TODO: Vytvořte třídu BTServer odvozenou z BT::TreeExecutionServer.
-// Konstruktor přijímá const rclcpp::NodeOptions& a předá je rodičovské třídě.
-// Volitelně přepište metodu onTreeCreated() pro přidání loggeru (BT::StdCoutLogger).
+
 class BTServer : public BT::TreeExecutionServer {
 public:
     BTServer(const rclcpp::NodeOptions& options) : TreeExecutionServer(options) {}
