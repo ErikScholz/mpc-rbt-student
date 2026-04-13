@@ -55,6 +55,8 @@ void MotionControlNode::checkCollision() {
     double desired_fov_rad = check_angle_deg * M_PI / 180.0; 
     int window = (desired_fov_rad / std::abs(laser_scan_.angle_increment)) / 2;
 
+    //RCLCPP_INFO(get_logger(), "Checking window: %d rays around center %d", window, center);
+
 
     // Check for collisions
     collision_detected = false;
@@ -80,6 +82,7 @@ void MotionControlNode::checkCollision() {
 
     // OBSTACLE ABORT ABORT
     RCLCPP_ERROR(get_logger(), "EMERGENCY STOP: Obstacle detected!");
+    
     
     // Stop robot
     geometry_msgs::msg::Twist stop;
@@ -123,7 +126,7 @@ void MotionControlNode::updateTwist() {
 
     // Settings
     const size_t n_look_ahead = 3;
-    const double max_lin_speed = 0.15;
+    const double max_lin_speed = 0.35;
     const double P_gain = 2.5;
     const double angle_threshold = 0.5;
 
@@ -217,6 +220,7 @@ void MotionControlNode::navHandleAccepted(const std::shared_ptr<rclcpp_action::S
 
     // Clear old path
     path_.poses.clear();
+    laser_scan_.ranges.clear();
 
 
     // Create /plan_path service request
