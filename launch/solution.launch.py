@@ -55,6 +55,27 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}]
     )
 
+    # Warehouse manager
+    warehouse_manager = Node(
+        package='mpc_rbt_student',
+        executable='warehouse_manager',
+        name='warehouse_manager',
+        output='screen',
+        parameters=[{'use_sim_time': True}]
+    )
+
+    # Behavior tree server
+    bt_server = Node(
+        package='mpc_rbt_student',
+        executable='bt_server',
+        name='bt_server',
+        output='screen',
+        parameters=[
+            {'use_sim_time': True},
+            os.path.join(get_package_share_directory('mpc_rbt_student'), 'config', 'bt_server.yaml')
+        ]
+    )
+
     
     return LaunchDescription([
         rviz_node,
@@ -69,7 +90,9 @@ def generate_launch_description():
             actions = [
                 localization_node,
                 planning_node,
-                motion_control_node
+                motion_control_node,
+                warehouse_manager,
+                bt_server
             ]
         )
     ])
