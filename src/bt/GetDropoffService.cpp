@@ -26,10 +26,18 @@ public:
 
     BT::NodeStatus onResponseReceived(const Response::SharedPtr& response) override
     {
-        // TODO: Zkontrolujte response->success. Pokud je false, vraťte FAILURE.
-        // Zapište response->message do output portu "storage_id" pomocí setOutput().
-        // Vraťte SUCCESS.
-        return BT::NodeStatus::FAILURE;
+        // Not sucessful
+        if (!response->success) {
+            RCLCPP_ERROR(logger(), "GetDropoffService: Failed to get drop-off point.");
+            return BT::NodeStatus::FAILURE;
+        }
+
+        // Write ID to blackboard
+        setOutput("storage_id", response->message);
+
+        // Return success
+        RCLCPP_INFO(logger(), "GetDropoffService: Target drop-off point %s assigned", response->message.c_str());
+        return BT::NodeStatus::SUCCESS;
     }
 
     BT::NodeStatus onFailure(BT::ServiceNodeErrorCode error) override

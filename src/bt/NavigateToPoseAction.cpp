@@ -20,28 +20,45 @@ public:
 
     bool setGoal(Goal& goal) override
     {
-        // TODO: Načtěte souřadnice x a y z input portů (getInput<double>).
-        // Naplňte goal.pose: nastavte header.frame_id na "map",
-        // pozici na načtené souřadnice a orientaci (w=1.0).
-        // Vraťte false pokud porty nejsou dostupné, jinak true.
-        return false;
+        // Read coords from port
+        auto x = getInput<double>("x");
+        auto y = getInput<double>("y");
+
+        // Check data validity
+        if (!x || !y) {
+            RCLCPP_ERROR(logger(), "NavigateToPoseAction: Missing x or y port!");
+            return false;
+        }
+
+        // Fill message data
+        goal.pose.header.frame_id = "map";
+        goal.pose.header.stamp = rclcpp::Clock().now();
+        goal.pose.pose.position.x = x.value();
+        goal.pose.pose.position.y = y.value();
+        goal.pose.pose.orientation.w = 1.0;
+
+        return true;
     }
 
     BT::NodeStatus onResultReceived(const WrappedResult& wr) override
     {
-        // TODO: Zkontrolujte wr.code. Pokud je SUCCEEDED, vraťte SUCCESS, jinak FAILURE.
+        // MotionControlNode was successful
+        if (wr.code == rclcpp_action::ResultCode::SUCCEEDED) {
+            return BT::NodeStatus::SUCCESS;
+        }
+        
+        RCLCPP_ERROR(logger(), "NavigateToPoseAction: Action ended with error (%d)", static_cast<int>(wr.code));
         return BT::NodeStatus::FAILURE;
     }
 
     BT::NodeStatus onFailure(BT::ActionNodeErrorCode error) override
     {
-        // TODO: Zalogujte chybu a vraťte FAILURE.
+        RCLCPP_ERROR(logger(), "NavigateToPoseAction: Critical server connection error (%d)", static_cast<int>(error));
         return BT::NodeStatus::FAILURE;
     }
 
     BT::NodeStatus onFeedback(const std::shared_ptr<const Feedback> /*feedback*/) override
     {
-        // TODO: Vraťte RUNNING (akce stále probíhá).
         return BT::NodeStatus::RUNNING;
     }
 };

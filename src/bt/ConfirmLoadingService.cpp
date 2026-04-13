@@ -24,9 +24,15 @@ public:
 
     BT::NodeStatus onResponseReceived(const Response::SharedPtr& response) override
     {
-        // TODO: Zkontrolujte response->success. Pokud je false, vraťte FAILURE.
-        // Tento node nemá žádný output port – stačí vrátit SUCCESS.
-        return BT::NodeStatus::FAILURE;
+        // Not sucessful
+        if (!response->success) {
+            RCLCPP_ERROR(logger(), "Error occured while loading: %s", response->message.c_str());
+            return BT::NodeStatus::FAILURE;
+        }
+
+        // Succes
+        RCLCPP_INFO(logger(), "ConfirmLoadingService: %s", response->message.c_str());
+        return BT::NodeStatus::SUCCESS;
     }
 
     BT::NodeStatus onFailure(BT::ServiceNodeErrorCode error) override

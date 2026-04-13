@@ -26,10 +26,18 @@ public:
 
     BT::NodeStatus onResponseReceived(const Response::SharedPtr& response) override
     {
-        // TODO: Zkontrolujte response->success. Pokud je false, vraťte FAILURE.
-        // Zapište response->message do output portu "manipulator_id" pomocí setOutput().
-        // Vraťte SUCCESS.
-        return BT::NodeStatus::FAILURE;
+        // Not sucessful
+        if (!response->success) {
+            RCLCPP_ERROR(logger(), "GetTaskService: Manager refused to give task.");
+            return BT::NodeStatus::FAILURE;
+        }
+
+        // Write ID to blackboard
+        setOutput("manipulator_id", response->message);
+
+        // Return success
+        RCLCPP_INFO(logger(), "GetTaskService: Manipulator %s assigned", response->message.c_str());
+        return BT::NodeStatus::SUCCESS;
     }
 
     BT::NodeStatus onFailure(BT::ServiceNodeErrorCode error) override
